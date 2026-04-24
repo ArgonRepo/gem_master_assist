@@ -29,6 +29,11 @@
 
     playAnimation(steps, onComplete) {
       this.stopAnimation();
+      
+      // Clear highlights when animation starts
+      this.highlightedMove = null;
+      document.querySelectorAll('.move-target').forEach(el => el.remove());
+      
       let stepIdx = 0;
       
       const renderNextStep = () => {
