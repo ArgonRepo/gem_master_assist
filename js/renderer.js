@@ -1,12 +1,5 @@
 (function(global) {
-  const { COLS, ROWS, GEM_COLORS } = global.GemConstants;
-
-  let _colorIdx = 0;
-  function nextColor() {
-    const c = GEM_COLORS[_colorIdx % GEM_COLORS.length];
-    _colorIdx++;
-    return c;
-  }
+  const { COLS, ROWS } = global.GemConstants;
 
   class Renderer {
     constructor() {
@@ -198,14 +191,12 @@
       if (type === 'hidden') el.classList.add('hidden-gem');
       el.style.setProperty('--gem-width', gem.width);
 
-      if (!this.gemColorMap.has(gem.id)) {
-        this.gemColorMap.set(gem.id, nextColor());
-      }
-
       if (gem.isColorful) {
         el.classList.add('colorful');
-      } else {
-        el.style.backgroundColor = type === 'hidden' ? '#9CA3AF' : this.gemColorMap.get(gem.id);
+      }
+
+      if (gem.isEliminating) {
+        el.classList.add('eliminating');
       }
 
       if (this.highlightedMove && this.highlightedMove.gemId === gem.id) {

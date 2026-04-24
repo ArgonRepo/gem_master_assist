@@ -33,7 +33,7 @@
       let totalRowsEliminated = 0;
       const steps = [];
 
-      this.applyGravity(board);
+      this._applyGravityWithSteps(board, steps);
 
       while (true) {
         const completeRows = [];
@@ -71,14 +71,21 @@
         totalRowsEliminated += completeRows.length;
         totalEliminated += toEliminate.size;
 
+        // Pre-eliminate snapshot for animation
+        const preEliminateBoard = board.clone();
+        for (const id of toEliminate) {
+          const gem = preEliminateBoard.gems.get(id);
+          if (gem) gem.isEliminating = true;
+        }
+        steps.push({ phase: 'pre-eliminate', snapshot: preEliminateBoard });
+
+        // Actual elimination
         for (const id of toEliminate) {
           board.removeGem(id);
         }
+        steps.push({ phase: 'eliminate', snapshot: this._snapshot(board) });
 
-        steps.push({ phase: 'eliminate', rows: [...completeRows], snapshot: this._snapshot(board) });
-
-        this.applyGravity(board);
-        steps.push({ phase: 'gravity', snapshot: this._snapshot(board) });
+        this._applyGravityWithSteps(board, steps);
       }
 
       return {
@@ -89,7 +96,7 @@
       };
     }
 
-    applyGravity(board) {
+    _applyGravityWithSteps(board, steps) {
       let moved = true;
       while (moved) {
         moved = false;
@@ -114,6 +121,9 @@
             }
             moved = true;
           }
+        }
+        if (moved) {
+          steps.push({ phase: 'gravity-step', snapshot: this._snapshot(board) });
         }
       }
     }
