@@ -132,9 +132,12 @@
     setTimeout(() => {
       currentResults = advisor.analyze(board);
       renderer.renderResults(currentResults, advisor);
-      if (currentResults.length > 0) {
+      if (currentResults.length > 0 && currentResults[0].eval !== -Infinity) {
         renderer.renderMovePreview(board, currentResults[0]);
         document.getElementById('execute-btn').disabled = false;
+      } else {
+        renderer.renderMovePreview(board, null);
+        document.getElementById('execute-btn').disabled = true;
       }
       btn.disabled = false;
       btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m15 5 4 4"/><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="m2 22 5.5-5.5"/><path d="m11.1 14.1 4.2-4.2c.8-.8 2.3-.8 3.1 0l3 3c.8.8.8 2.3 0 3.1l-4.2 4.2c-.8.8-2.3.8-3.1 0l-3-3c-.8-.8-.8-2.3 0-3.1Z"/></svg> 分析策略`;

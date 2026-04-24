@@ -303,6 +303,17 @@
       }
 
       const best = results[0];
+      if (best.eval === -Infinity) {
+        panel.innerHTML = `
+          <div class="no-results" style="color: var(--danger); border-color: rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); padding: 24px;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon" style="width: 32px; height: 32px; margin: 0 auto 12px; display: block;"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>
+            <div style="font-weight: bold; font-size: 16px; margin-bottom: 4px;">当前盘面已无解（死局）</div>
+            <div style="font-size: 13px; opacity: 0.8;">任何移动都会导致宝石触顶 Game Over</div>
+          </div>
+        `;
+        return;
+      }
+
       const bestEl = document.createElement('div');
       bestEl.className = 'best-move';
       
