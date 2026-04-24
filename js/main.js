@@ -149,11 +149,10 @@
     board.score += best.sim.score;
 
     currentResults = [];
-    renderer.highlightedMove = null;
     document.getElementById('results-panel').innerHTML = '<div class="no-results">执行完成，请填入新的隐藏行并继续</div>';
     document.getElementById('execute-btn').disabled = true;
 
-    renderer.renderBoard(board);
+    renderer.renderMovePreview(board, null);
     updateStatus();
 
     if (board.getMaxHeight() > ROWS) {
