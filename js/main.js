@@ -185,6 +185,7 @@
     renderer.renderedHiddenGems.clear();
     document.getElementById('results-panel').innerHTML = '';
     document.getElementById('execute-btn').disabled = true;
+    document.querySelectorAll('.move-target').forEach(el => el.remove());
     renderer.renderBoard(board);
     updateStatus();
   }
