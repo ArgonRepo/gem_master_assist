@@ -117,31 +117,36 @@
       }
 
       // === Deep Lookahead (Depth 2 ~ MAX_DEPTH) ===
-      // When we already score, deep lookahead is only a MINOR tiebreaker.
-      // When we don't score, it's the PRIMARY decision factor.
-      if (immediateScore === 0) {
-        // No immediate score — deep search is the main differentiator
-        const futureResult = this._deepSearch(afterBoard, 2);
-        if (futureResult.score > 0) {
-          const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 80;
-          total += discountedBonus;
+      // CRITICAL: When height >= ROWS (e.g. 10/10), the next push will likely
+      // cause Game Over. Deep search uses skipPush=true, so its predictions
+      // are UNRELIABLE at this height. Only immediate scoring matters for survival.
+      const afterHeight = sim.board.getMaxHeight();
+      const inCriticalDanger = afterHeight >= ROWS;
 
-          const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
-          reasons.push(`🧠 预判布局：${depthLabel}可消除 ${futureResult.comboCount} 行，预期得分 +${futureResult.score}`);
-        }
-      } else if (immediateScore <= 8) {
-        // Already scores 1 row — deep search is a minor tiebreaker only
-        const futureResult = this._deepSearch(afterBoard, 2);
-        if (futureResult.score > 0) {
-          // Much smaller weight (×10 instead of ×80) so it doesn't override safety
-          const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 10;
-          total += discountedBonus;
+      if (!inCriticalDanger) {
+        // When we already score, deep lookahead is only a MINOR tiebreaker.
+        // When we don't score, it's the PRIMARY decision factor.
+        if (immediateScore === 0) {
+          const futureResult = this._deepSearch(afterBoard, 2);
+          if (futureResult.score > 0) {
+            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 80;
+            total += discountedBonus;
 
-          const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
-          reasons.push(`🧠 且${depthLabel}还可继续消除 ${futureResult.comboCount} 行`);
+            const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
+            reasons.push(`🧠 预判布局：${depthLabel}可消除 ${futureResult.comboCount} 行，预期得分 +${futureResult.score}`);
+          }
+        } else if (immediateScore <= 8) {
+          const futureResult = this._deepSearch(afterBoard, 2);
+          if (futureResult.score > 0) {
+            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 10;
+            total += discountedBonus;
+
+            const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
+            reasons.push(`🧠 且${depthLabel}还可继续消除 ${futureResult.comboCount} 行`);
+          }
         }
       }
-      // When immediateScore > 8 (multi-row combo), no need for lookahead at all
+      // When immediateScore > 8 (multi-row combo) or inCriticalDanger, no lookahead
 
       // === Safety Evaluation ===
       const maxH = afterBoard.getMaxHeight();
