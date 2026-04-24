@@ -118,6 +118,11 @@
 
   function analyze() {
     if (isPreviewing) return;
+    if (board.hiddenRow.length === 0) {
+      document.getElementById('results-panel').innerHTML =
+        '<div class="no-results">⚠️ 请先在下方隐藏行中画出宝石</div>';
+      return;
+    }
     const btn = document.getElementById('analyze-btn');
     btn.disabled = true;
     btn.textContent = '分析中...';
