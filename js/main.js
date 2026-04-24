@@ -177,7 +177,11 @@
     board.score = 0;
     currentResults = [];
     renderer.highlightedMove = null;
-    renderer.gemColorMap.clear();
+    // Clear tracked gem DOM elements
+    for (const el of renderer.renderedGems.values()) el.remove();
+    renderer.renderedGems.clear();
+    for (const el of renderer.renderedHiddenGems.values()) el.remove();
+    renderer.renderedHiddenGems.clear();
     document.getElementById('results-panel').innerHTML = '';
     document.getElementById('execute-btn').disabled = true;
     renderer.renderBoard(board);
