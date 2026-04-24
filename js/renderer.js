@@ -5,7 +5,6 @@
     constructor() {
       this.boardEl = null;
       this.hiddenRowEl = null;
-      this.gemColorMap = new Map(); 
       this.highlightedMove = null; 
 
       // Drag state
@@ -15,6 +14,8 @@
 
       // Animation state
       this.previewInterval = null;
+      this.renderedGems = new Map(); // Track gem DOM elements by ID
+      this.renderedHiddenGems = new Map();
 
       // Callbacks
       this.onGemCreated = null; 
@@ -41,7 +42,6 @@
         stepIdx++;
       };
 
-      // Render first step immediately, then interval
       renderNextStep();
       this.previewInterval = setInterval(renderNextStep, 600);
     }
@@ -57,6 +57,10 @@
       this.boardEl = document.getElementById('board-grid');
       this.hiddenRowEl = document.getElementById('hidden-row-grid');
 
+      // Create the static background grids once
+      this._createStaticGrid(this.boardEl, ROWS, 'board');
+      this._createStaticGrid(this.hiddenRowEl, 1, 'hidden');
+
       // Global mouseup to cancel dragging if released outside
       document.addEventListener('mouseup', () => {
         if (this.isDragging) {
@@ -68,55 +72,91 @@
       this.hiddenRowEl.addEventListener('contextmenu', e => e.preventDefault());
     }
 
-    renderBoard(board) {
-      this.boardEl.innerHTML = '';
-      
-      for (let r = ROWS - 1; r >= 0; r--) {
+    _createStaticGrid(container, rows, type) {
+      container.innerHTML = '';
+      // Create empty cell grid (bottom row is 0, top is ROWS-1)
+      for (let r = rows - 1; r >= 0; r--) {
         const rowEl = document.createElement('div');
         rowEl.className = 'board-row';
-
-        let c = 0;
-        while (c < COLS) {
-          const gemId = board.grid[r][c];
-          if (gemId !== null) {
-            const gem = board.gems.get(gemId);
-            if (gem && gem.col === c) {
-              const gemEl = this._createGemElement(gem, 'board');
-              rowEl.appendChild(gemEl);
-              c += gem.width;
-              continue;
-            }
-          }
-          
-          const cellEl = this._createEmptyCell(r, c, 'board');
-          rowEl.appendChild(cellEl);
-          c++;
+        for (let c = 0; c < COLS; c++) {
+          rowEl.appendChild(this._createEmptyCell(r, c, type));
         }
-        this.boardEl.appendChild(rowEl);
+        container.appendChild(rowEl);
       }
+    }
+
+    renderBoard(board) {
+      // Reconcile board gems
+      const currentIds = new Set(board.gems.keys());
+
+      // 1. Remove gems that no longer exist
+      for (const [id, el] of this.renderedGems.entries()) {
+        if (!currentIds.has(id)) {
+          // If it was animating elimination, wait, else remove immediately
+          if (!el.classList.contains('eliminating')) {
+             el.remove();
+          } else {
+             // Let the animation finish before removing
+             setTimeout(() => el.remove(), 500); 
+          }
+          this.renderedGems.delete(id);
+        }
+      }
+
+      // 2. Update existing or create new gems
+      for (const gem of board.gems.values()) {
+        let el = this.renderedGems.get(gem.id);
+        if (!el) {
+          el = this._createGemElement(gem, 'board');
+          this.boardEl.appendChild(el);
+          this.renderedGems.set(gem.id, el);
+        }
+        
+        // Update CSS coordinates for smooth transition
+        el.style.setProperty('--col', gem.col);
+        el.style.setProperty('--row', gem.row);
+        
+        // Handle visual states
+        if (gem.isEliminating) {
+          el.classList.add('eliminating');
+        } else {
+          el.classList.remove('eliminating');
+        }
+
+        if (this.highlightedMove && this.highlightedMove.gemId === gem.id) {
+          el.classList.add('highlight-source');
+        } else {
+          el.classList.remove('highlight-source');
+        }
+      }
+
       this.renderHiddenRow(board);
     }
 
     renderHiddenRow(board) {
-      this.hiddenRowEl.innerHTML = '';
-      const occupied = new Set();
-      for (const entry of board.hiddenRow) {
-        for (let c = entry.col; c < entry.col + entry.width; c++) occupied.add(c);
+      // The hidden row uses pseudo-gems that don't have permanent IDs in the same way,
+      // but they are simple enough to reconcile by their column.
+      const currentCols = new Set(board.hiddenRow.map(e => e.col));
+
+      // Remove old
+      for (const [col, el] of this.renderedHiddenGems.entries()) {
+        if (!currentCols.has(col)) {
+          el.remove();
+          this.renderedHiddenGems.delete(col);
+        }
       }
 
-      let c = 0;
-      while (c < COLS) {
-        const entry = board.hiddenRow.find(e => e.col === c);
-        if (entry) {
-          const mockGem = { id: entry.col, width: entry.width, isColorful: entry.isColorful };
-          const gemEl = this._createGemElement(mockGem, 'hidden');
-          this.hiddenRowEl.appendChild(gemEl);
-          c += entry.width;
-        } else {
-          const cellEl = this._createEmptyCell(0, c, 'hidden');
-          this.hiddenRowEl.appendChild(cellEl);
-          c++;
+      // Update/Create
+      for (const entry of board.hiddenRow) {
+        let el = this.renderedHiddenGems.get(entry.col);
+        if (!el) {
+          const mockGem = { id: 'h' + entry.col, col: entry.col, row: 0, width: entry.width, isColorful: entry.isColorful };
+          el = this._createGemElement(mockGem, 'hidden');
+          this.hiddenRowEl.appendChild(el);
+          this.renderedHiddenGems.set(entry.col, el);
         }
+        el.style.setProperty('--col', entry.col);
+        el.style.setProperty('--row', 0);
       }
     }
 
@@ -190,17 +230,10 @@
       el.className = 'cell gem';
       if (type === 'hidden') el.classList.add('hidden-gem');
       el.style.setProperty('--gem-width', gem.width);
+      el.dataset.id = gem.id;
 
       if (gem.isColorful) {
         el.classList.add('colorful');
-      }
-
-      if (gem.isEliminating) {
-        el.classList.add('eliminating');
-      }
-
-      if (this.highlightedMove && this.highlightedMove.gemId === gem.id) {
-        el.classList.add('highlight-source');
       }
 
       // Interactions
@@ -227,20 +260,23 @@
       this.highlightedMove = move ? { gemId: move.gemId, targetCol: move.targetCol } : null;
       this.renderBoard(board);
 
+      // Remove any existing move targets
+      document.querySelectorAll('.move-target').forEach(el => el.remove());
+
       if (move) {
         const gem = board.gems.get(move.gemId);
         if (!gem) return;
-        const visualRow = ROWS - 1 - gem.row;
-        const rowEls = this.boardEl.querySelectorAll('.board-row');
-        if (rowEls[visualRow]) {
-          const targetEl = document.createElement('div');
-          targetEl.className = 'move-target';
-          targetEl.style.setProperty('--gem-width', gem.width);
-          targetEl.style.left = `calc(${move.targetCol} * (var(--cell-size) + 2px))`;
-          targetEl.textContent = move.direction === '←' ? '◁' : '▷';
-          rowEls[visualRow].style.position = 'relative';
-          rowEls[visualRow].appendChild(targetEl);
-        }
+        
+        const targetEl = document.createElement('div');
+        targetEl.className = 'move-target';
+        targetEl.style.setProperty('--gem-width', gem.width);
+        
+        // Position it absolutely on the board grid
+        targetEl.style.left = `calc(10px + ${move.targetCol} * (var(--cell-size) + var(--gap)))`;
+        targetEl.style.bottom = `calc(10px + ${gem.row} * (var(--cell-size) + var(--gap)))`;
+        targetEl.textContent = move.direction === '←' ? '◁' : '▷';
+        
+        this.boardEl.appendChild(targetEl);
       }
     }
 
@@ -282,7 +318,6 @@
         </button>
       `;
       
-      // Ensure hover events only work if not previewing, but that logic will be in main.js
       bestEl.addEventListener('mouseenter', () => {
         if (this._onHoverMove) this._onHoverMove(best);
       });
