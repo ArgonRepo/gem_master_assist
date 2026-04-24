@@ -22,15 +22,18 @@
         score: settleResult.score,
         eliminatedCount: settleResult.eliminatedCount,
         comboCount: settleResult.comboCount,
+        comboWaves: settleResult.comboWaves,
+        colorfulBonusCount: settleResult.colorfulBonusCount,
         isGameOver,
         steps,
       };
     }
 
     settle(board) {
-      let totalScore = 0;
       let totalEliminated = 0;
       let totalRowsEliminated = 0;
+      let comboWaves = 0;
+      let colorfulBonusCount = 0; // Extra gems eliminated via colorful chain reactions
       const steps = [];
 
       this._applyGravityWithSteps(board, steps);
@@ -42,14 +45,19 @@
         }
         if (completeRows.length === 0) break;
 
-        const toEliminate = new Set();
+        comboWaves++;
+
+        // Collect gems in complete rows
+        const rowGemIds = new Set();
         for (const r of completeRows) {
           for (let c = 0; c < COLS; c++) {
             const id = board.grid[r][c];
-            if (id != null) toEliminate.add(id);
+            if (id != null) rowGemIds.add(id);
           }
         }
 
+        // Expand via colorful gem chain reactions
+        const toEliminate = new Set(rowGemIds);
         const queue = [];
         for (const id of toEliminate) {
           const gem = board.gems.get(id);
@@ -66,8 +74,9 @@
           }
         }
 
-        const rowScore = calcScore(completeRows.length);
-        totalScore += rowScore;
+        // Count colorful bonus (gems eliminated beyond the complete rows)
+        colorfulBonusCount += (toEliminate.size - rowGemIds.size);
+
         totalRowsEliminated += completeRows.length;
         totalEliminated += toEliminate.size;
 
@@ -88,10 +97,15 @@
         this._applyGravityWithSteps(board, steps);
       }
 
+      // Score is computed ONCE using total rows (simultaneous and chain score identically)
+      const totalScore = calcScore(totalRowsEliminated);
+
       return {
         score: totalScore,
         eliminatedCount: totalEliminated,
         comboCount: totalRowsEliminated,
+        comboWaves,
+        colorfulBonusCount,
         steps,
       };
     }

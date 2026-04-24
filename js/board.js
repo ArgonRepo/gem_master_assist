@@ -161,14 +161,22 @@
       return holes;
     }
 
-    getPotentialRows() {
-      let count = 0;
+    getPotentialRowsWeighted() {
+      let score = 0;
+      let nearComplete = 0;
       const maxH = this.getMaxHeight();
       for (let r = 0; r < maxH; r++) {
         const fill = this.getRowFillCount(r);
-        if (fill >= COLS - 1) count++; 
+        const missing = COLS - fill;
+        if (missing === 1) {
+          score += 3; // Very close to elimination
+          nearComplete++;
+        } else if (missing === 2) {
+          score += 1; // Moderate potential
+          nearComplete++;
+        }
       }
-      return count;
+      return { score, nearComplete };
     }
   }
 
