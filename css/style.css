@@ -165,13 +165,31 @@ body {
   animation: pulse 1.5s infinite;
 }
 
+@keyframes rainbow-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
 /* Gradient for colorful gems */
 .gem.colorful {
-  background: linear-gradient(135deg, #FF9500, #FF2D55, #AF52DE, #5AC8FA) !important;
+  background: linear-gradient(
+    270deg, 
+    #FF3B30, 
+    #FF9500, 
+    #FFCC00, 
+    #34C759, 
+    #00C7BE, 
+    #007AFF, 
+    #5856D6,
+    #AF52DE
+  ) !important;
+  background-size: 400% 400% !important;
+  animation: rainbow-flow 4s ease infinite;
   box-shadow: 
-    inset 0 2px 4px rgba(255,255,255,0.4),
+    inset 0 2px 6px rgba(255,255,255,0.6),
     inset 0 -2px 4px rgba(0,0,0,0.2),
-    0 2px 12px rgba(175, 82, 222, 0.3);
+    0 4px 12px rgba(175, 82, 222, 0.4);
 }
 
 .hidden-gem {
