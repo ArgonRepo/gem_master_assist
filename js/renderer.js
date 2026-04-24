@@ -17,16 +17,47 @@
 
       // Drag state
       this.isDragging = false;
-      this.dragStartNode = null; // { row, col, type: 'board'|'hidden' }
+      this.dragStartNode = null; 
       this.dragCurrentNode = null;
 
+      // Animation state
+      this.previewInterval = null;
+
       // Callbacks
-      this.onGemCreated = null; // (type, row, startCol, width)
-      this.onGemClick = null;   // (id, type)
-      this.onGemRightClick = null; // (id, type)
+      this.onGemCreated = null; 
+      this.onGemClick = null;   
+      this.onGemRightClick = null; 
       
       this._onSelectMove = null;
       this._onHoverMove = null;
+      this.onPreviewClick = null;
+    }
+
+    playAnimation(steps, onComplete) {
+      this.stopAnimation();
+      let stepIdx = 0;
+      
+      const renderNextStep = () => {
+        if (stepIdx >= steps.length) {
+          this.stopAnimation();
+          if (onComplete) onComplete();
+          return;
+        }
+        const step = steps[stepIdx];
+        this.renderBoard(step.snapshot);
+        stepIdx++;
+      };
+
+      // Render first step immediately, then interval
+      renderNextStep();
+      this.previewInterval = setInterval(renderNextStep, 600);
+    }
+
+    stopAnimation() {
+      if (this.previewInterval) {
+        clearInterval(this.previewInterval);
+        this.previewInterval = null;
+      }
     }
 
     init() {
@@ -84,7 +115,6 @@
       while (c < COLS) {
         const entry = board.hiddenRow.find(e => e.col === c);
         if (entry) {
-          // hidden gem uses col as its id for callbacks
           const mockGem = { id: entry.col, width: entry.width, isColorful: entry.isColorful };
           const gemEl = this._createGemElement(mockGem, 'hidden');
           this.hiddenRowEl.appendChild(gemEl);
@@ -145,7 +175,6 @@
     }
 
     _updateDragVisuals() {
-      // Clear all drag highlights
       document.querySelectorAll('.drag-highlight').forEach(el => el.classList.remove('drag-highlight'));
       
       if (!this.isDragging || !this.dragStartNode || !this.dragCurrentNode) return;
@@ -153,7 +182,7 @@
       const type = this.dragStartNode.type;
       const row = this.dragStartNode.row;
       const startCol = Math.min(this.dragStartNode.col, this.dragCurrentNode.col);
-      const endCol = Math.min(startCol + 3, Math.max(this.dragStartNode.col, this.dragCurrentNode.col)); // Max 4 cells
+      const endCol = Math.min(startCol + 3, Math.max(this.dragStartNode.col, this.dragCurrentNode.col)); 
 
       const container = type === 'board' ? this.boardEl : this.hiddenRowEl;
       
@@ -186,15 +215,14 @@
       // Interactions
       el.addEventListener('mousedown', (e) => {
         e.stopPropagation();
-        if (e.button === 0) { // Left click -> delete
+        if (e.button === 0) { 
           if (this.onGemClick) this.onGemClick(gem.id, type);
-        } else if (e.button === 2) { // Right click -> toggle color
+        } else if (e.button === 2) { 
           e.preventDefault();
           if (this.onGemRightClick) this.onGemRightClick(gem.id, type);
         }
       });
       el.addEventListener('mouseenter', (e) => {
-        // If left mouse button is held down while entering, delete the gem (drag-to-delete)
         if (e.buttons === 1) {
           if (this.onGemClick) this.onGemClick(gem.id, type);
         }
@@ -257,11 +285,27 @@
           <span class="stat">安全高度 <strong>${best.sim.board.getMaxHeight()}/${ROWS}</strong></span>
           ${best.sim.isGameOver ? '<span class="stat danger">⚠ Game Over</span>' : ''}
         </div>
+        <button class="action-btn" id="preview-btn" style="margin-top: 16px; width: 100%; justify-content: center;">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+          演示效果
+        </button>
       `;
-      bestEl.addEventListener('click', () => {
-        if (this._onSelectMove) this._onSelectMove(best);
+      
+      // Ensure hover events only work if not previewing, but that logic will be in main.js
+      bestEl.addEventListener('mouseenter', () => {
+        if (this._onHoverMove) this._onHoverMove(best);
       });
+      bestEl.addEventListener('mouseleave', () => {
+        if (this._onHoverMove) this._onHoverMove(null);
+      });
+
       panel.appendChild(bestEl);
+
+      const previewBtn = document.getElementById('preview-btn');
+      previewBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (this.onPreviewClick) this.onPreviewClick(best, previewBtn);
+      });
     }
 
     set onSelectMove(fn) { this._onSelectMove = fn; }

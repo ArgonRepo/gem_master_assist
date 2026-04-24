@@ -13,6 +13,7 @@
 
   let currentResults = [];
   let history = []; 
+  let isPreviewing = false;
 
   function init() {
     renderer.init();
@@ -25,11 +26,11 @@
 
     // Drag-to-draw callback
     renderer.onGemCreated = (type, row, startCol, width) => {
+      if (isPreviewing) return;
       saveHistory();
       if (type === 'board') {
         board.addGem(row, startCol, width, false);
       } else if (type === 'hidden') {
-        // Check if space is available
         const occupied = new Set();
         for (const e of board.hiddenRow) {
           for (let c = e.col; c < e.col + e.width; c++) occupied.add(c);
@@ -48,6 +49,7 @@
 
     // Left click to delete
     renderer.onGemClick = (id, type) => {
+      if (isPreviewing) return;
       saveHistory();
       if (type === 'board') {
         board.removeGem(id);
@@ -61,6 +63,7 @@
 
     // Right click to toggle color
     renderer.onGemRightClick = (id, type) => {
+      if (isPreviewing) return;
       saveHistory();
       if (type === 'board') {
         const gem = board.gems.get(id);
@@ -74,10 +77,37 @@
 
     // Hover/Select move
     renderer.onSelectMove = (move) => {
+      if (isPreviewing) return;
       renderer.renderMovePreview(board, move);
     };
     renderer.onHoverMove = (move) => {
+      if (isPreviewing) return;
       renderer.renderMovePreview(board, move);
+    };
+
+    renderer.onPreviewClick = (best, btn) => {
+      if (isPreviewing) {
+        // Exit preview
+        isPreviewing = false;
+        renderer.stopAnimation();
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> 演示效果`;
+        btn.classList.remove('danger-outline');
+        renderer.renderMovePreview(board, best);
+      } else {
+        // Start preview
+        isPreviewing = true;
+        btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg> 退出演示`;
+        btn.classList.add('danger-outline');
+        
+        // Ensure steps exist
+        if (!best.sim.steps || best.sim.steps.length === 0) {
+          console.warn("No animation steps available.");
+          return;
+        }
+        renderer.playAnimation(best.sim.steps, () => {
+          // Keep it on the final state when done, user still has to click exit to edit
+        });
+      }
     };
 
     updateStatus();
@@ -89,6 +119,7 @@
   }
 
   function analyze() {
+    if (isPreviewing) return;
     const btn = document.getElementById('analyze-btn');
     btn.disabled = true;
     btn.textContent = '分析中...';
@@ -101,11 +132,12 @@
         document.getElementById('execute-btn').disabled = false;
       }
       btn.disabled = false;
-      btn.textContent = '🔍 分析策略';
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m15 5 4 4"/><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="m2 22 5.5-5.5"/><path d="m11.1 14.1 4.2-4.2c.8-.8 2.3-.8 3.1 0l3 3c.8.8.8 2.3 0 3.1l-4.2 4.2c-.8.8-2.3.8-3.1 0l-3-3c-.8-.8-.8-2.3 0-3.1Z"/></svg> 分析策略`;
     }, 50);
   }
 
   function executeMove() {
+    if (isPreviewing) return;
     if (currentResults.length === 0) return;
 
     const best = currentResults[0];
@@ -130,6 +162,7 @@
   }
 
   function resetBoard() {
+    if (isPreviewing) return;
     if (!confirm('确定要清空棋盘吗？')) return;
     saveHistory();
     resetIdCounter();
