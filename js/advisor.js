@@ -10,8 +10,9 @@
    * Each deeper level is discounted since uncertainty grows.
    */
   const MAX_DEPTH = 4;
-  const DEPTH_DISCOUNT = [1.0, 1.0, 0.7, 0.5, 0.35]; // discount factor per depth
-  const DEPTH_PRUNE = [Infinity, Infinity, 15, 8, 5];  // max candidates to explore per depth
+  const DEPTH_DISCOUNT = [1.0, 1.0, 0.7, 0.5, 0.35];
+  const DEPTH_PRUNE = [Infinity, Infinity, 15, 8, 5];
+  const DEBUG = false;
 
   class Advisor {
     analyze(board) {
@@ -40,11 +41,13 @@
       results.sort((a, b) => b.eval - a.eval);
 
       // Debug: log top 5 candidates
-      console.group('📊 策略分析结果 (Top 5)');
-      results.slice(0, 5).forEach((r, i) => {
-        console.log(`#${i+1} [eval=${r.eval.toFixed(1)}] 第${r.gemRow+1}行 ${r.gemWidth}格宽 列${r.gemCol+1}→列${r.targetCol+1} | 得分:${r.sim.score} 消除:${r.sim.comboCount}行 | ${r.reasons.join('; ')}`);
-      });
-      console.groupEnd();
+      if (DEBUG) {
+        console.group('📊 策略分析结果 (Top 5)');
+        results.slice(0, 5).forEach((r, i) => {
+          console.log(`#${i+1} [eval=${r.eval.toFixed(1)}] 第${r.gemRow+1}行 ${r.gemWidth}格宽 列${r.gemCol+1}→列${r.targetCol+1} | 得分:${r.sim.score} 消除:${r.sim.comboCount}行 | ${r.reasons.join('; ')}`);
+        });
+        console.groupEnd();
+      }
 
       return results;
     }

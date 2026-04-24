@@ -162,7 +162,17 @@ body {
 }
 
 .gem.highlight-source {
+  box-shadow: 
+    0 0 0 3px rgba(0,122,255,0.5),
+    0 0 12px rgba(0,122,255,0.3);
+}
+
+.gem.highlight-source:not(.colorful) {
   animation: pulse 1.5s infinite;
+}
+
+.gem.colorful.highlight-source {
+  animation: rainbow-flow 3s linear infinite, pulse 1.5s infinite;
 }
 
 @keyframes rainbow-flow {

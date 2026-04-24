@@ -168,6 +168,8 @@
         }
         el.style.setProperty('--col', entry.col);
         el.style.setProperty('--row', 0);
+        el.style.setProperty('--gem-width', entry.width);
+        el.classList.toggle('colorful', entry.isColorful);
       }
     }
 
@@ -345,7 +347,6 @@
       });
     }
 
-    set onSelectMove(fn) { this._onSelectMove = fn; }
     set onHoverMove(fn) { this._onHoverMove = fn; }
   }
 

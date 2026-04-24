@@ -1,5 +1,5 @@
 (function(global) {
-  const { COLS, ROWS } = global.GemConstants;
+  const { COLS, ROWS, MAX_ROWS } = global.GemConstants;
   const Board = global.GemBoard;
   const { resetIdCounter } = global.GemBoardUtils;
   const Simulator = global.GemSimulator;
@@ -75,11 +75,6 @@
       renderer.renderBoard(board);
     };
 
-    // Hover/Select move
-    renderer.onSelectMove = (move) => {
-      if (isPreviewing) return;
-      renderer.renderMovePreview(board, move);
-    };
     renderer.onHoverMove = (move) => {
       if (isPreviewing) return;
       renderer.renderMovePreview(board, move);
@@ -171,7 +166,7 @@
     if (!confirm('确定要清空棋盘吗？')) return;
     saveHistory();
     resetIdCounter();
-    board.grid = Array.from({ length: 14 }, () => Array(COLS).fill(null));
+    board.grid = Array.from({ length: MAX_ROWS }, () => Array(COLS).fill(null));
     board.gems.clear();
     board.hiddenRow = [];
     board.score = 0;

@@ -107,11 +107,8 @@
         this._applyGravityWithSteps(board, steps);
       }
 
-      // Score is computed ONCE using total rows (simultaneous and chain score identically)
-      const totalScore = calcScore(totalRowsEliminated);
 
       return {
-        score: totalScore,
         eliminatedCount: totalEliminated,
         comboCount: totalRowsEliminated,
         comboWaves,
@@ -254,7 +251,6 @@
       }
 
       return {
-        score: calcScore(totalRowsEliminated),
         comboCount: totalRowsEliminated,
         comboWaves,
         colorfulBonusCount,
