@@ -128,6 +128,12 @@
           el.classList.remove('eliminating');
         }
 
+        if (gem.isColorful) {
+          el.classList.add('colorful');
+        } else {
+          el.classList.remove('colorful');
+        }
+
         if (this.highlightedMove && this.highlightedMove.gemId === gem.id) {
           el.classList.add('highlight-source');
         } else {
