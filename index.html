@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>宝石大师辅助</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div class="app">
+    <div class="main-layout">
+      <!-- Left: Board Only -->
+      <div class="board-section">
+        <div id="board-grid"></div>
+        <div id="hidden-row-grid"></div>
+      </div>
+
+      <!-- Right: Controls & Results -->
+      <div class="side-panel">
+        <header>
+          <h1>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M6 3h12l4 6-10 13L2 9Z"></path><path d="M11 3 8 9l4 13 4-13-3-6"></path><path d="M2 9h20"></path></svg>
+            宝石大师辅助
+          </h1>
+          <div class="status-bar">
+            <span>得分: <span class="stat-value" id="status-score">0</span></span>
+            <span>高度: <span class="stat-value" id="status-height">0/10</span></span>
+            <span>宝石: <span class="stat-value" id="status-gems">0</span></span>
+          </div>
+        </header>
+
+        <div class="actions">
+          <button class="action-btn primary" id="analyze-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="m15 5 4 4"/><path d="M13 7 8.7 2.7a2.41 2.41 0 0 0-3.4 0L2.7 5.3a2.41 2.41 0 0 0 0 3.4L7 13"/><path d="m8 6 2-2"/><path d="m2 22 5.5-5.5"/><path d="m11.1 14.1 4.2-4.2c.8-.8 2.3-.8 3.1 0l3 3c.8.8.8 2.3 0 3.1l-4.2 4.2c-.8.8-2.3.8-3.1 0l-3-3c-.8-.8-.8-2.3 0-3.1Z"/></svg>
+            分析策略
+          </button>
+          <button class="action-btn success" id="execute-btn" disabled>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><polygon points="6 3 20 12 6 21 6 3"></polygon></svg>
+            执行
+          </button>
+          <button class="action-btn danger-outline" id="reset-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            清空
+          </button>
+        </div>
+
+        <div id="results-panel">
+          <div class="no-results">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="icon-large"><circle cx="12" cy="12" r="10"/><path d="M8 9.05v-.1"/><path d="M16 9.05v-.1"/><path d="M16 16c-.5 1.5-1.79 3-4 3s-3.5-1.5-4-3"/></svg>
+            <p>在左侧画出宝石后，点击「分析策略」</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/constants.js"></script>
+  <script src="js/board.js"></script>
+  <script src="js/simulator.js"></script>
+  <script src="js/advisor.js"></script>
+  <script src="js/renderer.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
