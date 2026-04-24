@@ -38,6 +38,14 @@
       }
 
       results.sort((a, b) => b.eval - a.eval);
+
+      // Debug: log top 5 candidates
+      console.group('📊 策略分析结果 (Top 5)');
+      results.slice(0, 5).forEach((r, i) => {
+        console.log(`#${i+1} [eval=${r.eval.toFixed(1)}] 第${r.gemRow+1}行 ${r.gemWidth}格宽 列${r.gemCol+1}→列${r.targetCol+1} | 得分:${r.sim.score} 消除:${r.sim.comboCount}行 | ${r.reasons.join('; ')}`);
+      });
+      console.groupEnd();
+
       return results;
     }
 
@@ -78,10 +86,11 @@
       if (sim.isGameOver) return { total: -Infinity, reasons: ['操作后会导致宝石触顶 Game Over'] };
 
       const afterBoard = sim.board;
+      const beforeHeight = originalBoard.getMaxHeight();
       const reasons = [];
       let total = 0;
 
-      // === Immediate Score (Depth-1) ===
+      // === Immediate Score (Depth-1) — dominant factor ===
       const immediateScore = sim.score;
       total += immediateScore * 100;
 
@@ -105,25 +114,40 @@
       }
 
       // === Deep Lookahead (Depth 2 ~ MAX_DEPTH) ===
-      // Only search deeper if immediate score is modest (0 or single row)
-      // to find setup/breakthrough opportunities.
-      if (immediateScore <= 8) {
+      // When we already score, deep lookahead is only a MINOR tiebreaker.
+      // When we don't score, it's the PRIMARY decision factor.
+      if (immediateScore === 0) {
+        // No immediate score — deep search is the main differentiator
         const futureResult = this._deepSearch(afterBoard, 2);
         if (futureResult.score > 0) {
           const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 80;
           total += discountedBonus;
 
           const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
-          if (immediateScore === 0) {
-            reasons.push(`🧠 预判布局：${depthLabel}可消除 ${futureResult.comboCount} 行，预期得分 +${futureResult.score}`);
-          } else {
-            reasons.push(`🧠 且${depthLabel}还可继续消除 ${futureResult.comboCount} 行`);
-          }
+          reasons.push(`🧠 预判布局：${depthLabel}可消除 ${futureResult.comboCount} 行，预期得分 +${futureResult.score}`);
+        }
+      } else if (immediateScore <= 8) {
+        // Already scores 1 row — deep search is a minor tiebreaker only
+        const futureResult = this._deepSearch(afterBoard, 2);
+        if (futureResult.score > 0) {
+          // Much smaller weight (×10 instead of ×80) so it doesn't override safety
+          const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 10;
+          total += discountedBonus;
+
+          const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
+          reasons.push(`🧠 且${depthLabel}还可继续消除 ${futureResult.comboCount} 行`);
         }
       }
+      // When immediateScore > 8 (multi-row combo), no need for lookahead at all
 
-      // === Safety Evaluation (tiebreaker) ===
+      // === Safety Evaluation ===
       const maxH = afterBoard.getMaxHeight();
+
+      // Bonus for height reduction (prefer moves that actively lower the board)
+      const heightReduction = beforeHeight - maxH;
+      if (heightReduction > 0) {
+        total += heightReduction * 20;
+      }
 
       if (maxH >= ROWS - 1) {
         total -= 500;
