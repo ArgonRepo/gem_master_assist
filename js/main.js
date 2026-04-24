@@ -146,9 +146,11 @@
     const best = currentResults[0];
     saveHistory();
 
+    // Correct game order: move → settle → push hidden → settle again
     board.moveGem(best.gemId, best.targetCol);
+    simulator.settle(board);      // Gravity + eliminate BEFORE push
     board.pushHiddenRow();
-    simulator.settle(board);
+    simulator.settle(board);      // Gravity + eliminate AFTER push
     board.score += best.sim.score;
 
     currentResults = [];

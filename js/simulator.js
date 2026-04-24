@@ -6,24 +6,34 @@
       const b = board.clone();
       const steps = [];
 
+      // Phase 1: Move gem
       b.moveGem(gemId, targetCol);
       steps.push({ phase: 'move', snapshot: this._snapshot(b) });
 
+      // Phase 2: Gravity + eliminate BEFORE hidden row push
+      const settleResult1 = this.settle(b);
+      steps.push(...settleResult1.steps);
+
+      // Phase 3: Push hidden row
       b.pushHiddenRow();
       steps.push({ phase: 'push', snapshot: this._snapshot(b) });
 
-      const settleResult = this.settle(b);
-      steps.push(...settleResult.steps);
+      // Phase 4: Gravity + eliminate AFTER hidden row push
+      const settleResult2 = this.settle(b);
+      steps.push(...settleResult2.steps);
 
+      // Combine results from both settle phases
+      const totalRows = settleResult1.comboCount + settleResult2.comboCount;
+      const totalScore = calcScore(totalRows);
       const isGameOver = b.getMaxHeight() > ROWS;
 
       return {
         board: b,
-        score: settleResult.score,
-        eliminatedCount: settleResult.eliminatedCount,
-        comboCount: settleResult.comboCount,
-        comboWaves: settleResult.comboWaves,
-        colorfulBonusCount: settleResult.colorfulBonusCount,
+        score: totalScore,
+        eliminatedCount: settleResult1.eliminatedCount + settleResult2.eliminatedCount,
+        comboCount: totalRows,
+        comboWaves: settleResult1.comboWaves + settleResult2.comboWaves,
+        colorfulBonusCount: settleResult1.colorfulBonusCount + settleResult2.colorfulBonusCount,
         isGameOver,
         steps,
       };
@@ -168,15 +178,26 @@
     simulateTurnFast(board, gemId, targetCol, skipPush) {
       const b = board.clone();
       b.moveGem(gemId, targetCol);
-      if (!skipPush) b.pushHiddenRow();
-      const settleResult = this.settleFast(b);
+
+      // Phase 1: Gravity + eliminate BEFORE hidden row push
+      const sr1 = this.settleFast(b);
+
+      // Phase 2: Push hidden row (if known)
+      let sr2 = { score: 0, comboCount: 0, comboWaves: 0, colorfulBonusCount: 0 };
+      if (!skipPush) {
+        b.pushHiddenRow();
+        // Phase 3: Gravity + eliminate AFTER hidden row push
+        sr2 = this.settleFast(b);
+      }
+
+      const totalRows = sr1.comboCount + sr2.comboCount;
       const isGameOver = b.getMaxHeight() > ROWS;
       return {
         board: b,
-        score: settleResult.score,
-        comboCount: settleResult.comboCount,
-        comboWaves: settleResult.comboWaves,
-        colorfulBonusCount: settleResult.colorfulBonusCount,
+        score: calcScore(totalRows),
+        comboCount: totalRows,
+        comboWaves: sr1.comboWaves + sr2.comboWaves,
+        colorfulBonusCount: sr1.colorfulBonusCount + sr2.colorfulBonusCount,
         isGameOver,
       };
     }
