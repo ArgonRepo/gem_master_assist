@@ -54,7 +54,8 @@
       if (type === 'board') {
         board.removeGem(id);
       } else if (type === 'hidden') {
-        board.hiddenRow = board.hiddenRow.filter(e => e.col !== id);
+        const col = typeof id === 'string' ? parseInt(id.slice(1)) : id;
+        board.hiddenRow = board.hiddenRow.filter(e => e.col !== col);
       }
       renderer.highlightedMove = null;
       renderer.renderBoard(board);
@@ -69,7 +70,8 @@
         const gem = board.gems.get(id);
         if (gem) gem.isColorful = !gem.isColorful;
       } else if (type === 'hidden') {
-        const entry = board.hiddenRow.find(e => e.col === id);
+        const col = typeof id === 'string' ? parseInt(id.slice(1)) : id;
+        const entry = board.hiddenRow.find(e => e.col === col);
         if (entry) entry.isColorful = !entry.isColorful;
       }
       renderer.renderBoard(board);
