@@ -117,11 +117,13 @@
       }
 
       // === Deep Lookahead (Depth 2 ~ MAX_DEPTH) ===
-      // CRITICAL: When height >= ROWS (e.g. 10/10), the next push will likely
-      // cause Game Over. Deep search uses skipPush=true, so its predictions
-      // are UNRELIABLE at this height. Only immediate scoring matters for survival.
+      // CRITICAL: When height >= ROWS-1 (e.g. 9/10), the next push will bring
+      // height to ROWS or above, likely causing Game Over. Deep search uses
+      // skipPush=true, so its multi-step predictions are UNRELIABLE at this
+      // height — following a 2-3 step combo plan could kill you before the
+      // combo materializes. Only immediate scoring matters for survival.
       const afterHeight = sim.board.getMaxHeight();
-      const inCriticalDanger = afterHeight >= ROWS;
+      const inCriticalDanger = afterHeight >= ROWS - 1;
 
       if (!inCriticalDanger) {
         // When we already score, deep lookahead is only a MINOR tiebreaker.
