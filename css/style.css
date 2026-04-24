@@ -162,9 +162,12 @@ body {
 }
 
 .gem.highlight-source {
+  outline: 3px dashed #F59E0B;
+  outline-offset: 2px;
   box-shadow: 
-    0 0 0 3px rgba(0,122,255,0.5),
-    0 0 12px rgba(0,122,255,0.3);
+    0 0 0 3px rgba(245, 158, 11, 0.4),
+    0 0 16px rgba(245, 158, 11, 0.4);
+  z-index: 11;
 }
 
 .gem.highlight-source:not(.colorful) {
