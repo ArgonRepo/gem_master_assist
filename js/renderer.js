@@ -330,13 +330,7 @@
           演示效果
         </button>
       `;
-      
-      bestEl.addEventListener('mouseenter', () => {
-        if (this._onHoverMove) this._onHoverMove(best);
-      });
-      bestEl.addEventListener('mouseleave', () => {
-        if (this._onHoverMove) this._onHoverMove(null);
-      });
+
 
       panel.appendChild(bestEl);
 
