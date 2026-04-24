@@ -105,13 +105,10 @@
           return;
         }
         renderer.playAnimation(best.sim.steps, () => {
-          // Auto-exit preview after a brief pause on the final state
-          setTimeout(() => {
-            isPreviewing = false;
-            btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> 演示效果`;
-            btn.classList.remove('danger-outline');
-            renderer.renderMovePreview(board, best);
-          }, 1500);
+          isPreviewing = false;
+          btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg> 演示效果`;
+          btn.classList.remove('danger-outline');
+          renderer.renderMovePreview(board, best);
         });
       }
     };
