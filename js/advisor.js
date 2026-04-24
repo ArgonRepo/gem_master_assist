@@ -149,14 +149,17 @@
       // Bonus for height reduction (prefer moves that actively lower the board)
       const heightReduction = beforeHeight - maxH;
       if (heightReduction > 0) {
-        total += heightReduction * 20;
+        // In danger zone, height reduction becomes critically important
+        const reductionWeight = maxH >= ROWS - 2 ? 80 : 20;
+        total += heightReduction * reductionWeight;
       }
 
       if (maxH >= ROWS - 1) {
-        total -= 500;
-        reasons.push(`⚠️ 极度危险！高度 ${maxH}/${ROWS}，即将触顶`);
+        // Survival mode: penalty must overwhelm ANY immediate score (max 4800 for 3-row combo)
+        total -= 2000;
+        reasons.push(`⚠️ 极度危险！高度 ${maxH}/${ROWS}，生存优先`);
       } else if (maxH >= ROWS - 2) {
-        total -= 200;
+        total -= 800;
         reasons.push(`⚠️ 高度偏高 (${maxH}/${ROWS})，需要警惕`);
       } else {
         total += (ROWS - maxH) * 5;
@@ -185,16 +188,15 @@
     }
 
     /**
-     * Recursive deep search.
+     * Recursive deep search — finds the BEST scoring opportunity across
+     * all depths (2 ~ MAX_DEPTH), not just the earliest.
      *
-     * At each depth, try all legal moves on the board (WITHOUT pushing
-     * a hidden row, since future rows are unknown). If any move produces
-     * a score, return it immediately (greedy: earliest scoring depth wins).
-     * If not, recurse deeper up to MAX_DEPTH.
+     * At each depth, try all legal moves (WITHOUT hidden row push since
+     * future rows are unknown). Collect scoring results AND continue
+     * searching deeper to compare discounted values.
      *
-     * Pruning: at each depth, only explore the top N candidates ranked
-     * by a fast heuristic (near-complete rows + safety) to keep
-     * computation bounded. Worst case: ~15 × 8 × 5 = 600 fast sims.
+     * Returns the option with the highest discounted value:
+     *   discounted = score × DEPTH_DISCOUNT[depth]
      *
      * @returns {{ score: number, comboCount: number, depth: number }}
      */
@@ -204,16 +206,16 @@
       const moves = this._getAllMoves(board);
       if (moves.length === 0) return { score: 0, comboCount: 0, depth: currentDepth };
 
-      // Phase A: Check if any move at this depth directly scores
-      let bestImmediate = { score: 0, comboCount: 0, depth: currentDepth };
-      const nonScoringResults = []; // { move, board } for moves that don't score
+      // Try all moves at this depth
+      let bestAtThisDepth = { score: 0, comboCount: 0, depth: currentDepth };
+      const nonScoringResults = [];
 
       for (const move of moves) {
         const sim = simulator.simulateTurnFast(board, move.gemId, move.targetCol, true);
         if (sim.isGameOver) continue;
 
-        if (sim.score > bestImmediate.score) {
-          bestImmediate = { score: sim.score, comboCount: sim.comboCount, depth: currentDepth };
+        if (sim.score > bestAtThisDepth.score) {
+          bestAtThisDepth = { score: sim.score, comboCount: sim.comboCount, depth: currentDepth };
         }
 
         if (sim.score === 0) {
@@ -221,24 +223,27 @@
         }
       }
 
-      // If we found scoring at this depth, return it
-      if (bestImmediate.score > 0) return bestImmediate;
-
-      // Phase B: No scoring at this depth — go deeper with pruning
-      // Sort by safety heuristic and only explore top candidates
+      // Also search deeper — don't stop just because this depth scored
       const pruneCount = DEPTH_PRUNE[currentDepth] || 5;
       nonScoringResults.sort((a, b) => b.safety - a.safety);
       const candidates = nonScoringResults.slice(0, pruneCount);
 
-      let bestDeep = { score: 0, comboCount: 0, depth: currentDepth + 1 };
+      let bestDeeper = { score: 0, comboCount: 0, depth: currentDepth + 1 };
       for (const candidate of candidates) {
         const result = this._deepSearch(candidate.board, currentDepth + 1);
-        if (result.score > bestDeep.score) {
-          bestDeep = result;
+        if (result.score > bestDeeper.score) {
+          bestDeeper = result;
         }
       }
 
-      return bestDeep;
+      // Compare discounted values: this depth vs deeper depths
+      const thisDiscounted = bestAtThisDepth.score * DEPTH_DISCOUNT[currentDepth];
+      const deepDiscounted = bestDeeper.score * DEPTH_DISCOUNT[bestDeeper.depth];
+
+      if (thisDiscounted >= deepDiscounted && bestAtThisDepth.score > 0) {
+        return bestAtThisDepth;
+      }
+      return bestDeeper;
     }
 
     /**
