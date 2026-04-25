@@ -5,11 +5,13 @@
   const Simulator = global.GemSimulator;
   const Advisor = global.GemAdvisor;
   const Renderer = global.GemRenderer;
+  const GameLogger = global.GameLogger;
 
   const board = new Board();
   const simulator = new Simulator();
   const advisor = new Advisor();
   const renderer = new Renderer();
+  const logger = new GameLogger();
 
   let currentResults = [];
   let history = []; 
@@ -23,6 +25,7 @@
     document.getElementById('analyze-btn').addEventListener('click', analyze);
     document.getElementById('execute-btn').addEventListener('click', executeMove);
     document.getElementById('reset-btn').addEventListener('click', resetBoard);
+    document.getElementById('export-btn').addEventListener('click', () => logger.download());
 
     // Drag-to-draw callback
     renderer.onGemCreated = (type, row, startCol, width) => {
@@ -131,6 +134,7 @@
 
     setTimeout(() => {
       currentResults = advisor.analyze(board);
+      logger.logAnalysis(board, currentResults, advisor);
       renderer.renderResults(currentResults, advisor);
       if (currentResults.length > 0 && currentResults[0].eval !== -Infinity) {
         renderer.renderMovePreview(board, currentResults[0]);
@@ -158,6 +162,8 @@
     simulator.settle(board);      // Gravity + eliminate AFTER push
     board.score += best.sim.score;
 
+    logger.logExecution(board, best);
+
     currentResults = [];
     document.getElementById('results-panel').innerHTML = '<div class="no-results">执行完成，请填入新的隐藏行并继续</div>';
     document.getElementById('execute-btn').disabled = true;
@@ -166,7 +172,8 @@
     updateStatus();
 
     if (board.getMaxHeight() > ROWS) {
-      alert('⚠️ Game Over! 宝石超过了顶部。');
+      logger.logGameOver(board);
+      alert('⚠️ Game Over! 宝石超过了顶部。请点击「导出日志」保存本局数据。');
     }
   }
 
@@ -174,6 +181,7 @@
     if (isPreviewing) return;
     if (!confirm('确定要清空棋盘吗？')) return;
     saveHistory();
+    logger.reset();
     resetIdCounter();
     board.grid = Array.from({ length: MAX_ROWS }, () => Array(COLS).fill(null));
     board.gems.clear();
