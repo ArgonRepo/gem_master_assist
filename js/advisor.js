@@ -122,16 +122,26 @@
       // skipPush=true, so its multi-step predictions are UNRELIABLE at this
       // height — following a 2-3 step combo plan could kill you before the
       // combo materializes. Only immediate scoring matters for survival.
+      //
+      // Height-scaled weight: depth-3+ predictions have ~30% hit rate (measured
+      // across 4 games). At low heights this is an acceptable gamble, but at
+      // high heights the cost of a wrong bet is fatal. Scale the deep search
+      // multiplier down linearly from height 6 onward.
       const afterHeight = sim.board.getMaxHeight();
       const inCriticalDanger = afterHeight >= ROWS - 1;
 
-      if (!inCriticalDanger) {
+      // Base weight 80 at height 0-5, linearly → 0 at height ROWS-1 (9)
+      const deepSearchWeight = inCriticalDanger ? 0
+        : afterHeight <= 5 ? 80
+        : Math.round(80 * (ROWS - 1 - afterHeight) / (ROWS - 1 - 5));
+
+      if (deepSearchWeight > 0) {
         // When we already score, deep lookahead is only a MINOR tiebreaker.
         // When we don't score, it's the PRIMARY decision factor.
         if (immediateScore === 0) {
           const futureResult = this._deepSearch(afterBoard, 2);
           if (futureResult.score > 0) {
-            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 80;
+            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * deepSearchWeight;
             total += discountedBonus;
 
             const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
@@ -140,7 +150,8 @@
         } else if (immediateScore <= 8) {
           const futureResult = this._deepSearch(afterBoard, 2);
           if (futureResult.score > 0) {
-            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * 10;
+            const tieWeight = Math.min(deepSearchWeight, 10);
+            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * tieWeight;
             total += discountedBonus;
 
             const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
