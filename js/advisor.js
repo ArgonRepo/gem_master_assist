@@ -130,10 +130,12 @@
       const afterHeight = sim.board.getMaxHeight();
       const inCriticalDanger = afterHeight >= ROWS - 1;
 
-      // Base weight 80 at height 0-5, linearly → 0 at height ROWS-1 (9)
-      const deepSearchWeight = inCriticalDanger ? 0
-        : afterHeight <= 5 ? 80
-        : Math.round(80 * (ROWS - 1 - afterHeight) / (ROWS - 1 - 5));
+      // Base weight 80 at height 0-5, linearly → 10 at height ROWS-1 (9)
+      // Minimum floor of 10: at critical heights where all moves are non-scoring,
+      // deep search serves as a tiebreaker rather than blind selection.
+      // The -2000 survival penalty ensures immediate scoring always wins.
+      const deepSearchWeight = afterHeight <= 5 ? 80
+        : Math.max(10, Math.round(80 * (ROWS - 1 - afterHeight) / (ROWS - 1 - 5)));
 
       if (deepSearchWeight > 0) {
         // When we already score, deep lookahead is only a MINOR tiebreaker.
