@@ -88,6 +88,12 @@
     _evaluateWithLookahead(sim, originalBoard) {
       if (sim.isGameOver) return { total: -Infinity, reasons: ['操作后会导致宝石触顶 Game Over'] };
 
+      // If height reaches maximum and nothing was eliminated, the next push
+      // will inevitably overflow — treat as effectively game over.
+      if (sim.board.getMaxHeight() >= ROWS && sim.score === 0) {
+        return { total: -Infinity, reasons: ['高度已满且无法消除，下一轮推行必定触顶'] };
+      }
+
       const afterBoard = sim.board;
       const beforeHeight = originalBoard.getMaxHeight();
       const reasons = [];
