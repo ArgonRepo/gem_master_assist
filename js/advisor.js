@@ -88,11 +88,6 @@
     _evaluateWithLookahead(sim, originalBoard) {
       if (sim.isGameOver) return { total: -Infinity, reasons: ['操作后会导致宝石触顶 Game Over'] };
 
-      // If height reaches maximum and nothing was eliminated, the next push
-      // will inevitably overflow — treat as effectively game over.
-      if (sim.board.getMaxHeight() >= ROWS && sim.score === 0) {
-        return { total: -Infinity, reasons: ['高度已满且无法消除，下一轮推行必定触顶'] };
-      }
 
       const afterBoard = sim.board;
       const beforeHeight = originalBoard.getMaxHeight();
@@ -122,20 +117,11 @@
         reasons.push(`🌈 彩色宝石连锁，额外清除 ${colorfulBonus} 个宝石`);
       }
 
-      // === Deep Lookahead (Depth 2 ~ MAX_DEPTH) ===
-      // CRITICAL: When height >= ROWS-1 (e.g. 9/10), the next push will bring
-      // height to ROWS or above, likely causing Game Over. Deep search uses
-      // skipPush=true, so its multi-step predictions are UNRELIABLE at this
-      // height — following a 2-3 step combo plan could kill you before the
-      // combo materializes. Only immediate scoring matters for survival.
-      //
       // Height-scaled weight: depth-3+ predictions have ~30% hit rate (measured
       // across 4 games). At low heights this is an acceptable gamble, but at
       // high heights the cost of a wrong bet is fatal. Scale the deep search
       // multiplier down linearly from height 6 onward.
       const afterHeight = sim.board.getMaxHeight();
-      const inCriticalDanger = afterHeight >= ROWS - 1;
-
       // Base weight 80 at height 0-5, linearly → 10 at height ROWS-1 (9)
       // Minimum floor of 10: at critical heights where all moves are non-scoring,
       // deep search serves as a tiebreaker rather than blind selection.
@@ -167,7 +153,7 @@
           }
         }
       }
-      // When immediateScore > 8 (multi-row combo) or inCriticalDanger, no lookahead
+      // When immediateScore > 8 (multi-row combo), no lookahead — already a great result
 
       // === Safety Evaluation ===
       const maxH = afterBoard.getMaxHeight();
@@ -181,7 +167,8 @@
       }
 
       if (maxH >= ROWS - 1) {
-        // Survival mode: penalty must overwhelm ANY immediate score (max 4800 for 3-row combo)
+        // Heavy penalty at critical height — but not enough to override multi-row combos,
+        // which actively reduce height and should still be executed.
         total -= 2000;
         reasons.push(`⚠️ 极度危险！高度 ${maxH}/${ROWS}，生存优先`);
       } else if (maxH >= ROWS - 2) {
