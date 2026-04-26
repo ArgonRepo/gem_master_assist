@@ -39,11 +39,20 @@
         visual.push(`R${String(r + 1).padStart(2, '0')}|${line}|`);
       }
 
+      // Bottom 2 rows gem width stats (for stability analysis)
+      const bottomGems = gems.filter(g => g.row <= 1);
+      const bottomAvgWidth = bottomGems.length > 0
+        ? parseFloat((bottomGems.reduce((s, g) => s + g.width, 0) / bottomGems.length).toFixed(2))
+        : 0;
+      const bottomW1Count = bottomGems.filter(g => g.width === 1).length;
+
       return {
         height: maxH,
         score: board.score,
         gemCount: board.gems.size,
         holes: board.getHoleCount(),
+        bottomAvgWidth,
+        bottomW1Count,
         gems,
         hiddenRow: board.hiddenRow.map(e => ({ col: e.col, width: e.width, isColorful: e.isColorful })),
         visual
@@ -77,6 +86,10 @@
           simIsGameOver: r.sim.isGameOver,
           simAfterHeight: r.sim.board.getMaxHeight(),
           simAfterHoles: r.sim.board.getHoleCount(),
+          simAfterBottomAvgWidth: (() => {
+            const bg = []; for (const g of r.sim.board.gems.values()) { if (g.row <= 1) bg.push(g); }
+            return bg.length > 0 ? parseFloat((bg.reduce((s,g) => s+g.width, 0) / bg.length).toFixed(2)) : 0;
+          })(),
           reasons: r.reasons
         })),
         // Summary of all dead-end moves
@@ -116,6 +129,7 @@
     // Export full game log as JSON
     export() {
       const data = {
+        version: 'v2-height-scaled-weight',
         exportTime: new Date().toISOString(),
         gameStartTime: this.gameStartTime,
         totalTurns: this.turns.length,
