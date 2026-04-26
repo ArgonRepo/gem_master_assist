@@ -10,9 +10,10 @@
    * Each deeper level is discounted since uncertainty grows.
    */
   const MAX_DEPTH = 4;
-  // Calibrated from 5 games (n=96 depth-2, n=110 depth-3):
-  // depth-2 measured hit rate ~76%, depth-3 ~30%, depth-4 extrapolated ~15%
-  const DEPTH_DISCOUNT = [1.0, 1.0, 0.7, 0.3, 0.15];
+  // depth-2 hit rate ~76%, depth-3 ~30%. Discount reflects risk-adjusted value,
+  // not raw hit probability — a 30% chance at 3x payoff is still worth betting
+  // at safe heights. The deepSearchWeight handles height-based risk scaling.
+  const DEPTH_DISCOUNT = [1.0, 1.0, 0.7, 0.5, 0.35];
   const DEPTH_PRUNE = [Infinity, Infinity, 15, 8, 5];
   const DEBUG = false;
 
