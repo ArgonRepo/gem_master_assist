@@ -135,7 +135,13 @@
         if (immediateScore === 0) {
           const futureResult = this._deepSearch(afterBoard, 2);
           if (futureResult.score > 0) {
-            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * deepSearchWeight;
+            // depth-3+ predictions have ~30% hit rate vs depth-2's ~76%.
+            // At height >= 6, apply extra discount to depth-3+ to prevent
+            // unreliable deep predictions from overriding immediate scoring.
+            const effectiveWeight = (futureResult.depth >= 3 && afterHeight >= 6)
+              ? Math.round(deepSearchWeight * 0.4)
+              : deepSearchWeight;
+            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * effectiveWeight;
             total += discountedBonus;
 
             const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
