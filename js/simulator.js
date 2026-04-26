@@ -25,7 +25,7 @@
       // Combine results from both settle phases
       const totalRows = settleResult1.comboCount + settleResult2.comboCount;
       const totalScore = calcScore(totalRows);
-      const isGameOver = b.getMaxHeight() > ROWS;
+      const isGameOver = b.getMaxHeight() >= ROWS;
 
       return {
         board: b,
@@ -188,7 +188,7 @@
       }
 
       const totalRows = sr1.comboCount + sr2.comboCount;
-      const isGameOver = b.getMaxHeight() > ROWS;
+      const isGameOver = b.getMaxHeight() >= ROWS;
       return {
         board: b,
         score: calcScore(totalRows),

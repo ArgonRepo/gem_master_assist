@@ -171,7 +171,7 @@
     renderer.renderMovePreview(board, null);
     updateStatus();
 
-    if (board.getMaxHeight() > ROWS) {
+    if (board.getMaxHeight() >= ROWS) {
       logger.logGameOver(board);
       alert('⚠️ Game Over! 宝石超过了顶部。请点击「导出日志」保存本局数据。');
     }
