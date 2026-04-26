@@ -129,7 +129,7 @@
     // Export full game log as JSON
     export() {
       const data = {
-        version: 'v2-height-scaled-weight',
+        version: 'v3-constant-weight-with-survival-patch',
         exportTime: new Date().toISOString(),
         gameStartTime: this.gameStartTime,
         totalTurns: this.turns.length,
