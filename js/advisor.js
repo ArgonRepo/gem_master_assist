@@ -120,17 +120,12 @@
         reasons.push(`🌈 彩色宝石连锁，额外清除 ${colorfulBonus} 个宝石`);
       }
 
-      // Height-scaled weight: depth-3+ predictions have ~30% hit rate (measured
-      // across 4 games). At low heights this is an acceptable gamble, but at
-      // high heights the cost of a wrong bet is fatal. Scale the deep search
-      // multiplier down linearly from height 6 onward.
+      // Combo construction is the ONLY way to reduce net height (1-row elimination
+      // just breaks even against the push). Weight must stay high at ALL heights
+      // to encourage layout→combo sequences. Only at height ROWS-1 (one push from
+      // death), use a minimal weight as tiebreaker instead of blind selection.
       const afterHeight = sim.board.getMaxHeight();
-      // Base weight 80 at height 0-5, linearly → 10 at height ROWS-1 (9)
-      // Minimum floor of 10: at critical heights where all moves are non-scoring,
-      // deep search serves as a tiebreaker rather than blind selection.
-      // The -2000 survival penalty ensures immediate scoring always wins.
-      const deepSearchWeight = afterHeight <= 5 ? 80
-        : Math.max(10, Math.round(80 * (ROWS - 1 - afterHeight) / (ROWS - 1 - 5)));
+      const deepSearchWeight = afterHeight >= ROWS - 1 ? 10 : 80;
 
       if (deepSearchWeight > 0) {
         // When we already score, deep lookahead is only a MINOR tiebreaker.
