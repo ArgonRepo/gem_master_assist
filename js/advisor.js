@@ -10,7 +10,9 @@
    * Each deeper level is discounted since uncertainty grows.
    */
   const MAX_DEPTH = 4;
-  const DEPTH_DISCOUNT = [1.0, 1.0, 0.7, 0.5, 0.35];
+  // Calibrated from 5 games (n=96 depth-2, n=110 depth-3):
+  // depth-2 measured hit rate ~76%, depth-3 ~30%, depth-4 extrapolated ~15%
+  const DEPTH_DISCOUNT = [1.0, 1.0, 0.7, 0.3, 0.15];
   const DEPTH_PRUNE = [Infinity, Infinity, 15, 8, 5];
   const DEBUG = false;
 
@@ -135,13 +137,7 @@
         if (immediateScore === 0) {
           const futureResult = this._deepSearch(afterBoard, 2);
           if (futureResult.score > 0) {
-            // depth-3+ predictions have ~30% hit rate vs depth-2's ~76%.
-            // At height >= 6, apply extra discount to depth-3+ to prevent
-            // unreliable deep predictions from overriding immediate scoring.
-            const effectiveWeight = (futureResult.depth >= 3 && afterHeight >= 6)
-              ? Math.round(deepSearchWeight * 0.4)
-              : deepSearchWeight;
-            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * effectiveWeight;
+            const discountedBonus = futureResult.score * DEPTH_DISCOUNT[futureResult.depth] * deepSearchWeight;
             total += discountedBonus;
 
             const depthLabel = futureResult.depth === 2 ? '下一步' : `${futureResult.depth - 1} 步后`;
